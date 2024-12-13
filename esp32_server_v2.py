@@ -93,7 +93,7 @@ def get_data():
     filtered_data = []
     last_timestamp = None
     for entry in weather_data:
-        current_timestamp = datetime.fromisoformat(entry["timestamp"])
+        current_timestamp = entry["timestamp"]
         if last_timestamp is None or (current_timestamp - last_timestamp) > timedelta(minutes=2):
             filtered_data.append(entry)
             last_timestamp = current_timestamp
@@ -106,9 +106,9 @@ def show_weather():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Calculate the timestamp for 72 hours ago
+    # Calculate the timestamp for 24 hours ago
     est_tz = pytz.timezone('US/Eastern')
-    last_24_hours = datetime.now(est_tz) - timedelta(days=3)
+    last_24_hours = datetime.now(est_tz) - timedelta(days=1)
     last_24_hours_str = last_24_hours.strftime('%Y-%m-%d %H:%M:%S')
 
     # Fetch weather data from the last 24 hours

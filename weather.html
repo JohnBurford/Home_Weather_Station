@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>34 Norval Weather Data</title>
+    <title>34 Norval Weather Station</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
@@ -11,139 +11,177 @@
         /* Make the chart responsive */
         #chart-container {
             width: 90%; /* Adjust this percentage as needed */
-            margin: 0 auto; /* Center the chart horizontally */
-        }
+            margin: 0 auto; /* Center the chart horizontally */ 
+	}
 
         canvas {
             width: 100%; /* Full width of the parent container */
-            height: auto; /* Maintain aspect ratio */
-        }
+            height: 100%; /* Maintain aspect ratio */
+
     </style>
 </head>
 <body>
-    <h1>Weather Data</h1>
-
-    <h2>Current Weather Data</h2>
-    <ul>
-        <li><strong>Temperature:</strong> {{ temperatures[-1] }} °C</li>
-        <li><strong>Humidity:</strong> {{ humidities[-1] }} %</li>
-        <li><strong>Pressure:</strong> {{ pressures[-1] }} hPa</li>
-    </ul>
-
-    <h2>Weather Data for the Last 24 Hours</h2>
+    <h1>Stoneham MA Current Weather</h1>
+    <p style="font-size: 1.5em;">
+        <strong style="color: rgba(255, 99, 132, 1);">Temperature:</strong> 
+        <span id="current-temp">-- °F</span> /
+        <strong style="color: rgba(54, 162, 235, 1);">Humidity:</strong> 
+        <span id="current-humidity">--%</span> /
+        <strong style="color: rgba(75, 192, 192, 1);">Pressure:</strong> 
+        <span id="current-pressure">-- hPa</span>
+    </p>
+    <h2>Last 3 Days</h2>
     <div id="chart-container">
         <canvas id="weatherChart"></canvas>
     </div>
 
     <script>
-        console.log('Initializing chart...');
+        var weatherChart;  // Declare weatherChart variable outside the fetch function
 
-        // Initialize the chart
-        var ctx = document.getElementById('weatherChart').getContext('2d');
-        var weatherChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ times | tojson }}, // ISO 8601 timestamps
-                datasets: [{
-                    label: 'Temperature (°C)',
-                    data: {{ temperatures | tojson }},
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    fill: false,
-                    yAxisID: 'y1'
-                }, {
-                    label: 'Humidity (%)',
-                    data: {{ humidities | tojson }},
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    fill: false,
-                    yAxisID: 'y1'
-                }, {
-                    label: 'Pressure (hPa)',
-                    data: {{ pressures | tojson }},
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false,
-                    yAxisID: 'y2'
-                }]
-            },
-            options: {
-                responsive: true, // Make the chart responsive
-                maintainAspectRatio: true, // Maintain aspect ratio
-                scales: {
-                    x: {
-                        type: 'time', // Use time scale
-                        time: {
-                            parser: 'YYYY-MM-DDTHH:mm:ssZ', // Specify the ISO 8601 format
-                            tooltipFormat: 'MMM D, h:mm A', // Tooltip format
-                            displayFormats: {
-                                hour: 'h:mm A', // Format for hour ticks
-                                day: 'MMM D'
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Time'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Temperature / Humidity'
-                        }
-                    },
-                    y2: {
-                        type: 'linear',
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Pressure'
-                        }
-                    }
-                }
-            }
-        });
-
-        console.log('Chart initialized:', weatherChart);
-
-        // Function to fetch new data from the server
         function fetchData() {
             console.log('Fetching new data...');
-            fetch('/api/data')  // Replace this with the actual server route
+            fetch('/api/data')  // Replace with your actual server route
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    console.log('Response received:', response);
                     return response.json();
                 })
                 .then(data => {
                     console.log('Data received:', data);
 
-                    // Validate data structure
-                    if (!data.times || !data.temperatures || !data.humidities || !data.pressures) {
+                    // Ensure data format is correct
+                    if (!data || !data.length) {
                         console.error('Invalid data format:', data);
                         return;
                     }
 
-                    // Update the chart data and labels with the new data
-                    weatherChart.data.labels = data.times; // ISO 8601 timestamps
-                    weatherChart.data.datasets[0].data = data.temperatures;
-                    weatherChart.data.datasets[1].data = data.humidities;
-                    weatherChart.data.datasets[2].data = data.pressures;
+                    // Extract data from the response
+                    var times = data.map(item => item.timestamp);
+                    var temperatures = data.map(item => item.temperature);
+                    var humidities = data.map(item => item.humidity);
+                    var pressures = data.map(item => item.pressure);
 
-                    // Log updated chart data for debugging
-                    console.log('Updating chart with new data:', weatherChart.data);
+                    // Update current weather values
+                    document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
+                    document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
+                    document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
 
-                    // Update the chart with the new data
-                    weatherChart.update();
+                    // Update chart with new data
+                    weatherChart.data.labels = times;
+                    weatherChart.data.datasets[0].data = temperatures;
+                    weatherChart.data.datasets[1].data = humidities;
+                    weatherChart.data.datasets[2].data = pressures;
+                    weatherChart.update();  // Update the chart with the new data
                 })
                 .catch(error => {
                     console.error('Error fetching new data:', error);
                 });
         }
 
-        // Fetch data every 5 seconds (5000 milliseconds)
-        setInterval(fetchData, 5000);
+        console.log('Initializing chart...');
+
+        // Fetch initial data from the server
+        fetch('/api/data')  // Replace with the correct endpoint
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Initial data received:', data);
+
+                // Validate the received data structure
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.error('Invalid data format:', data);
+                    return;
+                }
+
+                // Transform the data to match the expected format
+                const times = data.map(entry => entry.timestamp); // Extract timestamps
+                const temperatures = data.map(entry => entry.temperature); // Extract temperatures
+                const humidities = data.map(entry => entry.humidity); // Extract humidities
+                const pressures = data.map(entry => entry.pressure); // Extract pressures
+
+                // Update current weather values
+                document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
+                document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
+                document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
+
+                // Initialize the chart with the fetched data
+                var ctx = document.getElementById('weatherChart').getContext('2d');
+                weatherChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: times, // ISO 8601 timestamps
+                        datasets: [{
+                            label: 'Temperature (°F)',
+                            data: temperatures,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            fill: false,
+                            yAxisID: 'y1'
+                        }, {
+                            label: 'Humidity (%)',
+                            data: humidities,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            fill: false,
+                            yAxisID: 'y1'
+                        }, {
+                            label: 'Pressure (hPa)',
+                            data: pressures,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            fill: false,
+                            yAxisID: 'y2'
+                        }]
+                    },
+                    options: {
+                        responsive: true, // Make the chart responsive
+                        maintainAspectRatio: true, // Maintain aspect ratio
+                        scales: {
+                            x: {
+                                type: 'time', // Use time scale
+                                time: {
+                                    parser: 'YYYY-MM-DDTHH:mm:ssZ', // Specify the ISO 8601 format
+                                    tooltipFormat: 'MMM D, h:mm A', // Tooltip format
+                                    displayFormats: {
+                                        hour: 'h:mm A', // Format for hour ticks
+                                        day: 'MMM D'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Temperature / Humidity'
+                                }
+                            },
+                            y2: {
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Pressure'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                console.log('Chart initialized:', weatherChart);
+
+                // Start fetching new data at intervals
+                setInterval(fetchData, 5000);
+            })
+            .catch(error => {
+                console.error('Error initializing chart with data:', error);
+            });
     </script>
 </body>
 </html>

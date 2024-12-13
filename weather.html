@@ -21,7 +21,7 @@
     </style>
 </head>
 <body>
-    <h1>Stoneham MA Current Weather</h1>
+    <h1>Stoneham MA Weather</h1>
     <p style="font-size: 1.5em;">
         <strong style="color: rgba(255, 99, 132, 1);">Temperature:</strong> 
         <span id="current-temp">-- °F</span> /
@@ -176,8 +176,8 @@
 
                 console.log('Chart initialized:', weatherChart);
 
-                // Start fetching new data at intervals
-                setInterval(fetchData, 5000);
+                // Start fetching new data at 2min intervals
+                setInterval(fetchData, 120000);
             })
             .catch(error => {
                 console.error('Error initializing chart with data:', error);

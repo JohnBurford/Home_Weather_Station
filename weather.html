@@ -8,14 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/moment"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
     <style>
+        /* Make the chart responsive */
         #chart-container {
-            width: 90%;
-            margin: 0 auto;
-        }
+            width: 90%; /* Adjust this percentage as needed */
+            margin: 0 auto; /* Center the chart horizontally */ 
+	}
+
         canvas {
-            width: 100%;
-            height: 100%;
-        }
+            width: 100%; /* Full width of the parent container */
+            height: 100%; /* Maintain aspect ratio */
+
     </style>
 </head>
 <body>
@@ -37,137 +39,170 @@
     </div>
 
     <script>
-        let weatherChart; 
+        var weatherChart;  // Declare weatherChart variable outside the fetch function
 
         function fetchData() {
             console.log('Fetching new data...');
-            fetch('/api/data') // Replace with your server's endpoint
-                .then(response => response.json())
+            fetch('/api/data')  // Replace with your actual server route
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log('Data received:', data);
 
+                    // Ensure data format is correct
                     if (!data || !data.length) {
-                        console.error('No valid data received.');
+                        console.error('Invalid data format:', data);
                         return;
                     }
 
-                    // Extract data
-                    const times = data.map(item => item.timestamp);
-                    const temperatures = data.map(item => item.temperature);
-                    const humidities = data.map(item => item.humidity);
-                    const pressures = data.map(item => item.pressure);
+                    // Get the current time and calculate the cutoff for 72 hours ago
+                    const now = new Date();
+                    const cutoff = new Date(now.getTime() - 72 * 60 * 60 * 1000);
 
-                    // Update current readings
-                    const lastTime = new Date(times[times.length - 1]);
+                    // Filter data for the last 72 hours
+                    const filteredData = data.filter(item => new Date(item.timestamp) >= cutoff);
+
+                    // Extract data from the response
+                    var times = filteredData.map(item => item.timestamp);
+                    var temperatures = filteredData.map(item => item.temperature);
+                    var humidities = filteredData.map(item => item.humidity);
+                    var pressures = filteredData.map(item => item.pressure);
+
+                    // Update current weather values
                     document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
                     document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
                     document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
-                    document.getElementById('last-time').textContent = lastTime.toLocaleString();
+                    const lastTime = new Date(times[times.length - 1]);
+                    document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
 
-                    // Update chart
+
+                    // Update chart with new data
                     weatherChart.data.labels = times;
                     weatherChart.data.datasets[0].data = temperatures;
                     weatherChart.data.datasets[1].data = humidities;
                     weatherChart.data.datasets[2].data = pressures;
-                    weatherChart.update();
+                    weatherChart.update();  // Update the chart with the new data
                 })
-                .catch(error => console.error('Error fetching data:', error));
+                .catch(error => {
+                    console.error('Error fetching new data:', error);
+                });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const ctx = document.getElementById('weatherChart').getContext('2d');
+        console.log('Initializing chart...');
 
-            weatherChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [], // Timestamps
-                    datasets: [
-                        {
+        // Fetch initial data from the server
+        fetch('/api/data')  // Replace with the correct endpoint
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Initial data received:', data);
+
+                // Validate the received data structure
+                if (!Array.isArray(data) || data.length === 0) {
+                    console.error('Invalid data format:', data);
+                    return;
+                }
+
+                // Filter data for the last 72 hours
+                const now = new Date();
+                const cutoff = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+                const filteredData = data.filter(entry => new Date(entry.timestamp) >= cutoff);
+
+                // Transform the data to match the expected format
+                const times = filteredData.map(entry => entry.timestamp); // Extract timestamps
+                const temperatures = filteredData.map(entry => entry.temperature); // Extract temperatures
+                const humidities = filteredData.map(entry => entry.humidity); // Extract humidities
+                const pressures = filteredData.map(entry => entry.pressure); // Extract pressures
+
+                // Update current weather values
+                document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
+                document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
+                document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
+                const lastTime = new Date(times[times.length - 1]);
+                document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
+
+
+                // Initialize the chart with the fetched data
+                var ctx = document.getElementById('weatherChart').getContext('2d');
+                weatherChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: times, // ISO 8601 timestamps
+                        datasets: [{
                             label: 'Temperature (°F)',
-                            data: [],
+                            data: temperatures,
                             borderColor: 'rgba(255, 99, 132, 1)',
                             fill: false,
                             yAxisID: 'y1'
-                        },
-                        {
+                        }, {
                             label: 'Humidity (%)',
-                            data: [],
+                            data: humidities,
                             borderColor: 'rgba(54, 162, 235, 1)',
                             fill: false,
                             yAxisID: 'y1'
-                        },
-                        {
+                        }, {
                             label: 'Pressure (hPa)',
-                            data: [],
+                            data: pressures,
                             borderColor: 'rgba(75, 192, 192, 1)',
                             fill: false,
                             yAxisID: 'y2'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'hour', // Automatically show hours and add date at midnight
-                                tooltipFormat: 'MMM D, h:mm A', // Tooltip format
-                                displayFormats: {
-                                    hour: 'MMM D, h:mm A', // Include date at midnight
-                                    day: 'MMM D'
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            },
-                            ticks: {
-                                autoSkip: true,
-                                maxTicksLimit: 10,
-                                callback: (value, index, values) => {
-                                    const currentLabel = values[index].value;
-                                    const previousLabel = index > 0 ? values[index - 1].value : null;
-
-                                    // Show full date if it's the start of a new day
-                                    if (previousLabel) {
-                                        const currentDate = new Date(currentLabel);
-                                        const previousDate = new Date(previousLabel);
-
-                                        if (currentDate.getDate() !== previousDate.getDate()) {
-                                            return moment(currentLabel).format('MMM D');
-                                        }
+                        }]
+                    },
+                    options: {
+                        responsive: true, // Make the chart responsive
+                        maintainAspectRatio: true, // Maintain aspect ratio
+                        scales: {
+                            x: {
+                                type: 'time', // Use time scale
+                                time: {
+                                    parser: 'YYYY-MM-DDTHH:mm:ssZ', // Specify the ISO 8601 format
+                                    tooltipFormat: 'ddd, MMM D, h:mm A', // Tooltip format
+                                    displayFormats: {
+                                        hour: 'ddd h:mm A', // Format for hour ticks
+                                        day: 'ddd, MMM D'
                                     }
-
-                                    return moment(currentLabel).format('h:mm A');
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Time'
                                 }
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Temperature / Humidity'
-                            }
-                        },
-                        y2: {
-                            type: 'linear',
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Pressure'
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Temperature / Humidity'
+                                }
+                            },
+                            y2: {
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Pressure'
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
 
-            // Initial data fetch and set interval for updates
-            fetchData();
-            setInterval(fetchData, 120000);
-        });
+                console.log('Chart initialized:', weatherChart);
+
+                // Start fetching new data at 2min intervals
+                setInterval(fetchData, 120000);
+            })
+            .catch(error => {
+                console.error('Error initializing chart with data:', error);
+            });
     </script>
 </body>
 </html>

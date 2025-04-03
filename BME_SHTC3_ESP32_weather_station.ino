@@ -8,7 +8,7 @@
 
 // Network credentials
 const char* ssid = "WifiNetwork92";
-const char* password = "ancienttrain984";
+const char* password = "*Password_here*";
 
 // Sensors and Web Server
 SHTC3 shtc3;

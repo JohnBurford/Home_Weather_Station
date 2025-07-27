@@ -28,8 +28,8 @@
     <p style="font-size: 1.5em;">
         <strong style="color: rgba(255, 99, 132, 1);">Temperature:</strong> 
         <span id="current-temp">-- °F</span> /
-        <strong style="color: rgba(54, 162, 235, 1);">Humidity:</strong> 
-        <span id="current-humidity">--%</span> /
+        <strong style="color: rgba(54, 162, 235, 1);">Dew Point:</strong> 
+        <span id="current-dewpoint">-- °F</span> /
         <strong style="color: rgba(75, 192, 192, 1);">Pressure:</strong> 
         <span id="current-pressure">-- hPa</span>
     </p>
@@ -69,12 +69,12 @@
                     // Extract data from the response
                     var times = filteredData.map(item => item.timestamp);
                     var temperatures = filteredData.map(item => item.temperature);
-                    var humidities = filteredData.map(item => item.humidity);
+                    var dewpoints = filteredData.map(item => item.dewpoint);
                     var pressures = filteredData.map(item => item.pressure);
 
                     // Update current weather values
                     document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
-                    document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
+                    document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)}%`;
                     document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
                     const lastTime = new Date(times[times.length - 1]);
                     document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
@@ -83,7 +83,7 @@
                     // Update chart with new data
                     weatherChart.data.labels = times;
                     weatherChart.data.datasets[0].data = temperatures;
-                    weatherChart.data.datasets[1].data = humidities;
+                    weatherChart.data.datasets[1].data = dewpoints;
                     weatherChart.data.datasets[2].data = pressures;
                     weatherChart.update();  // Update the chart with the new data
                 })
@@ -119,12 +119,12 @@
                 // Transform the data to match the expected format
                 const times = filteredData.map(entry => entry.timestamp); // Extract timestamps
                 const temperatures = filteredData.map(entry => entry.temperature); // Extract temperatures
-                const humidities = filteredData.map(entry => entry.humidity); // Extract humidities
+                const dewpoints = filteredData.map(entry => entry.dewpoint); // Extract dewpoints
                 const pressures = filteredData.map(entry => entry.pressure); // Extract pressures
 
                 // Update current weather values
                 document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
-                document.getElementById('current-humidity').textContent = `${humidities[humidities.length - 1].toFixed(2)}%`;
+                document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)}%`;
                 document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
                 const lastTime = new Date(times[times.length - 1]);
                 document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
@@ -143,8 +143,8 @@
                             fill: false,
                             yAxisID: 'y1'
                         }, {
-                            label: 'Humidity (%)',
-                            data: humidities,
+                            label: 'Dew Point (%)',
+                            data: dewpoints,
                             borderColor: 'rgba(54, 162, 235, 1)',
                             fill: false,
                             yAxisID: 'y1'
@@ -180,7 +180,7 @@
                                 position: 'left',
                                 title: {
                                     display: true,
-                                    text: 'Temperature / Humidity'
+                                    text: 'Temperature / Dew Point'
                                 }
                             },
                             y2: {

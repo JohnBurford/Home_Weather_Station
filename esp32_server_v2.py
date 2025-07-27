@@ -23,14 +23,21 @@ def add_data():
         humidity = data.get('humidity')
         pressure = data.get('pressure')
 
-        #calculate dewpoint
+        # calculate dewpoint
         if temperature is not None and humidity is not None:
+            # Convert temperature from F to C
+            temp_c = (temperature - 32) / 1.8
+
             a = 17.27
             b = 237.7
-            alpha = ((a * temperature) / (b + temperature)) + math.log(humidity / 100.0)
-            dew_point = (b * alpha) / (a - alpha)
+            alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
+            dew_point_c = (b * alpha) / (a - alpha)
+
+            # Convert dewpoint back to Fahrenheit
+            dew_point = dew_point_c * 1.8 + 32
         else:
             dew_point = None
+
 
         # Check if any of the required fields are missing
         if None in [temperature, humidity, pressure]:

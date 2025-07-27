@@ -3,6 +3,7 @@ import sqlite3
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime, timedelta  # To handle timestamps and date calculations
 import pytz
+import math
 
 app = Flask(__name__)
 
@@ -22,6 +23,15 @@ def add_data():
         humidity = data.get('humidity')
         pressure = data.get('pressure')
 
+        #calculate dewpoint
+        if temperature is not None and humidity is not None:
+            a = 17.27
+            b = 237.7
+            alpha = ((a * temperature) / (b + temperature)) + math.log(humidity / 100.0)
+            dew_point = (b * alpha) / (a - alpha)
+        else:
+            dew_point = None
+
         # Check if any of the required fields are missing
         if None in [temperature, humidity, pressure]:
             return jsonify({"error": "Missing data"}), 400
@@ -35,9 +45,9 @@ def add_data():
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO weather (temperature, humidity, pressure, timestamp)
-            VALUES (?, ?, ?, ?)
-        ''', (temperature, humidity, pressure, timestamp))
+            INSERT INTO weather (temperature, humidity, pressure, dewpoint, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (temperature, humidity, pressure, dew_point, timestamp))
 
         conn.commit()  # Commit the transaction
         #Purge old data if needed 
@@ -84,7 +94,8 @@ def get_data():
             "temperature": row[1],
             "humidity": row[2],
             "pressure": row[3],
-            "timestamp": row[4]
+            "timestamp": row[4],
+            "dewpoint": row[5]
         })
     
     #sort data by timestamp
@@ -113,7 +124,7 @@ def show_weather():
 
     # Fetch weather data from the last 24 hours
     cursor.execute('''
-        SELECT temperature, humidity, pressure, timestamp 
+        SELECT temperature, humidity, pressure, timestamp, dewpoint
         FROM weather 
         WHERE timestamp >= ?
     ''', (last_24_hours_str,))
@@ -126,16 +137,18 @@ def show_weather():
     temperatures = []
     humidities = []
     pressures = []
+    dewpoints = []
     for row in rows:
         times.append(row[3])  # Timestamp
         temperatures.append(row[0])  # Temperature
         humidities.append(row[1])  # Humidity
         pressures.append(row[2])  # Pressure
+        dewpoints.append(row[4]) # dewpoint
 
     # Render the webpage with the data and the graph
     return render_template('weather.html', 
                            times=times, temperatures=temperatures, 
-                           humidities=humidities, pressures=pressures)
+                           humidities=humidities, dewpoints=dewpoints, pressures=pressures)
 
 # Start the Flask application
 if __name__ == '__main__':

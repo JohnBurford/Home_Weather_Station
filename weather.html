@@ -74,7 +74,7 @@
 
                     // Update current weather values
                     document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
-                    document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)}%`;
+                    document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)} °F`;
                     document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
                     const lastTime = new Date(times[times.length - 1]);
                     document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
@@ -124,7 +124,7 @@
 
                 // Update current weather values
                 document.getElementById('current-temp').textContent = `${temperatures[temperatures.length - 1].toFixed(2)} °F`;
-                document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)}%`;
+                document.getElementById('current-dewpoint').textContent = `${dewpoints[dewpoints.length - 1].toFixed(2)} °F`;
                 document.getElementById('current-pressure').textContent = `${pressures[pressures.length - 1].toFixed(2)} hPa`;
                 const lastTime = new Date(times[times.length - 1]);
                 document.getElementById('last-time').textContent = lastTime.toLocaleString(); 
@@ -143,7 +143,7 @@
                             fill: false,
                             yAxisID: 'y1'
                         }, {
-                            label: 'Dew Point (%)',
+                            label: 'Dew Point (°F)',
                             data: dewpoints,
                             borderColor: 'rgba(54, 162, 235, 1)',
                             fill: false,
